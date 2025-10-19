@@ -25,13 +25,11 @@
   .comparison-button:hover { background: #E65100; }
   .comparison-button.active { background: #D84315; border: 3px solid #BF360C; }
   
-  /* Single Mode */
   .single-mode .canvas-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   .single-mode .canvas-wrapper { overflow: auto; max-height: 500px; border: 2px solid #ddd; background: white; }
   .single-mode canvas { display: block; margin: 0; }
   .single-mode #stack-canvas { grid-column: 1 / -1; }
   
-  /* Comparison Mode */
   .comparison-mode .comparison-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
   .comparison-mode .comparison-section { border: 2px solid #ddd; border-radius: 8px; padding: 15px; background: #fafafa; }
   .comparison-mode .section-title { font-weight: bold; font-size: 18px; color: #fff; padding: 10px; margin: -15px -15px 15px -15px; border-radius: 6px 6px 0 0; text-align: center; }
@@ -72,7 +70,6 @@
   <button class="reset-button" onclick="resetSimulation()">Reiniciar</button>
 </div>
 
-<!-- SINGLE MODE LAYOUT -->
 <div id="singleModeLayout">
   <div class="canvas-container">
     <div>
@@ -103,10 +100,8 @@
   <div id="output"></div>
 </div>
 
-<!-- COMPARISON MODE LAYOUT -->
 <div id="comparisonModeLayout" class="hidden">
   <div class="comparison-container">
-    <!-- RECURSIVE SECTION -->
     <div class="comparison-section">
       <div class="section-title recursive-title">DFS RECURSIVO</div>
       <div class="canvas-label">Grafo com Exploração:</div>
@@ -119,7 +114,6 @@
       </div>
     </div>
     
-    <!-- ITERATIVE SECTION -->
     <div class="comparison-section">
       <div class="section-title iterative-title">DFS ITERATIVO</div>
       <div class="canvas-label">Grafo com Exploração:</div>
@@ -133,7 +127,6 @@
     </div>
   </div>
 
-  <!-- STACK COMPARISON -->
   <div class="comparison-container stack-comparison">
     <div class="comparison-section">
       <div class="section-title recursive-title">Pilha de Chamadas (Recursivo)</div>
@@ -158,7 +151,6 @@
     </div>
   </div>
 
-  <!-- OUTPUT COMPARISON -->
   <div class="comparison-container output-comparison">
     <div class="comparison-section">
       <div class="section-title recursive-title">Passo a Passo (Recursivo)</div>
@@ -181,14 +173,12 @@ let adjList = {};
 let currentGraphType = 'default1';
 let comparisonMode = false;
 
-// Single mode state
 let marked = {}, expl = {}, stack = [], cont = 0, currentVertex = null;
 let steps = [], stepIndex = 0, simulationStarted = false;
 let treeEdges = [], treeParent = {};
 let dfsVersion = 'recursive';
 let outputText = '';
 
-// Comparison mode state
 let stateRec = { marked: {}, expl: {}, stack: [], cont: 0, currentVertex: null, treeEdges: [], treeParent: {}, steps: [], stepIndex: 0, output: '' };
 let stateIter = { marked: {}, expl: {}, stack: [], cont: 0, currentVertex: null, treeEdges: [], treeParent: {}, steps: [], stepIndex: 0, output: '' };
 
@@ -197,7 +187,6 @@ let canvasRec, ctxRec, treeCanvasRec, treeCtxRec, stackCanvasRec, stackCtxRec;
 let canvasIter, ctxIter, treeCanvasIter, treeCtxIter, stackCanvasIter, stackCtxIter;
 
 function init() {
-  // Single mode canvases
   canvas = document.getElementById('graph-canvas');
   ctx = canvas.getContext('2d');
   treeCanvas = document.getElementById('tree-canvas');
@@ -205,7 +194,6 @@ function init() {
   stackCanvas = document.getElementById('stack-canvas');
   stackCtx = stackCanvas.getContext('2d');
   
-  // Comparison mode canvases
   canvasRec = document.getElementById('graph-canvas-rec');
   ctxRec = canvasRec.getContext('2d');
   treeCanvasRec = document.getElementById('tree-canvas-rec');
@@ -283,9 +271,14 @@ function loadDefaultGraph() {
   vertices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   
   let edgeList = [
-    [1, 9], [1, 4], [1, 5], [9, 5], [5, 4],
-    [4, 6], [4, 2], [4, 7], [4, 8], [6, 8],
-    [8, 2], [8, 3], [8, 10], [2, 3], [2, 7], [7, 3]
+    [1, 9], [1, 4], [1, 5],
+    [9, 5],
+    [5, 4],
+    [4, 6], [4, 2], [4, 7], [4, 8],
+    [6, 8],
+    [8, 2], [8, 3], [8, 10],
+    [2, 3], [2, 7],
+    [7, 3]
   ];
   
   buildGraphFromEdges(edgeList);
@@ -296,8 +289,13 @@ function loadDefaultGraph2() {
   vertices = [1, 2, 3, 4, 5, 6, 7, 8];
   
   let edgeList = [
-    [1, 2], [1, 3], [2, 4], [2, 5],
-    [3, 6], [3, 7], [4, 8], [5, 8], [6, 8], [7, 8]
+    [1, 2], [1, 3],
+    [2, 4], [2, 5],
+    [3, 6], [3, 7],
+    [4, 8],
+    [5, 8],
+    [6, 8],
+    [7, 8]
   ];
   
   buildGraphFromEdges(edgeList);
@@ -312,16 +310,23 @@ function generateRandomGraph() {
   }
   
   vertices = [];
-  for (let i = 1; i <= n; i++) vertices.push(i);
+  for (let i = 1; i <= n; i++) {
+    vertices.push(i);
+  }
   
   let edgeList = [];
-  let connected = [1], unconnected = [];
-  for (let i = 2; i <= n; i++) unconnected.push(i);
+  let connected = [1];
+  let unconnected = [];
+  for (let i = 2; i <= n; i++) {
+    unconnected.push(i);
+  }
   
   while (unconnected.length > 0) {
     let fromIdx = Math.floor(Math.random() * connected.length);
     let toIdx = Math.floor(Math.random() * unconnected.length);
-    let from = connected[fromIdx], to = unconnected[toIdx];
+    let from = connected[fromIdx];
+    let to = unconnected[toIdx];
+    
     edgeList.push([from, to]);
     connected.push(to);
     unconnected.splice(toIdx, 1);
@@ -331,6 +336,7 @@ function generateRandomGraph() {
   for (let i = 0; i < numExtraEdges; i++) {
     let from = Math.floor(Math.random() * n) + 1;
     let to = Math.floor(Math.random() * n) + 1;
+    
     if (from !== to && !edgeList.some(e => (e[0] === from && e[1] === to) || (e[0] === to && e[1] === from))) {
       edgeList.push([from, to]);
     }
@@ -347,16 +353,23 @@ function buildGraphFromEdges(edgeList) {
   }
   
   adjList = {};
-  for (let v of vertices) adjList[v] = [];
+  for (let v of vertices) {
+    adjList[v] = [];
+  }
   
   for (let [u, v] of edges) {
-    if (!adjList[u].includes(v)) adjList[u].push(v);
+    if (!adjList[u].includes(v)) {
+      adjList[u].push(v);
+    }
   }
   
   for (let v of vertices) {
     adjList[v].sort((a, b) => a - b);
   }
   
+  drawGraph();
+  drawTree();
+  drawStack();
   resetSimulation();
   document.getElementById('stepBtn').disabled = false;
 }
@@ -364,7 +377,22 @@ function buildGraphFromEdges(edgeList) {
 function getPositions(canvasWidth, canvasHeight) {
   let positions = {};
   
-  if (currentGraphType === 'default2' && vertices.length === 8) {
+  if (currentGraphType === 'default1' && vertices.length === 10) {
+    // Layout correto do Padrão 1 (igual ao simulador-dfs-completo.html)
+    let scale = canvasWidth / 650;
+    positions = {
+      1: { x: 180 * scale, y: 120 },
+      9: { x: 80 * scale, y: 180 },
+      5: { x: 180 * scale, y: 240 },
+      4: { x: 320 * scale, y: 180 },
+      6: { x: 420 * scale, y: 80 },
+      8: { x: 520 * scale, y: 120 },
+      10: { x: 650 * scale, y: 120 },
+      2: { x: 520 * scale, y: 220 },
+      7: { x: 420 * scale, y: 280 },
+      3: { x: 650 * scale, y: 240 }
+    };
+  } else if (currentGraphType === 'default2' && vertices.length === 8) {
     let scale = canvasWidth / 650;
     positions = {
       1: { x: 325 * scale, y: 80 },
@@ -392,6 +420,64 @@ function getPositions(canvasWidth, canvasHeight) {
   }
   
   return positions;
+}
+
+function drawGraph() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  let radius = 20;
+  let positions = getPositions(canvas.width, canvas.height);
+  
+  ctx.strokeStyle = '#666';
+  ctx.lineWidth = 2;
+  let drawnEdges = new Set();
+  
+  for (let [from, to] of edges) {
+    let edgeKey = from < to ? `${from}-${to}` : `${to}-${from}`;
+    if (drawnEdges.has(edgeKey)) continue;
+    drawnEdges.add(edgeKey);
+    
+    let fromPos = positions[from];
+    let toPos = positions[to];
+    
+    ctx.beginPath();
+    ctx.moveTo(fromPos.x, fromPos.y);
+    ctx.lineTo(toPos.x, toPos.y);
+    ctx.stroke();
+  }
+  
+  for (let v of vertices) {
+    let pos = positions[v];
+    
+    if (marked[v]) {
+      ctx.fillStyle = '#4CAF50';
+    } else if (currentVertex === v) {
+      ctx.fillStyle = '#FFC107';
+    } else if (stack.includes(v)) {
+      ctx.fillStyle = '#FF9800';
+    } else {
+      ctx.fillStyle = '#fff';
+    }
+    
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, radius, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
+    
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(v, pos.x, pos.y);
+    
+    if (expl[v] !== undefined) {
+      ctx.fillStyle = '#c62828';
+      ctx.font = 'bold 14px Arial';
+      ctx.fillText(expl[v], pos.x + 25, pos.y - 5);
+    }
+  }
 }
 
 function drawGraphOnCanvas(context, canvasObj, state) {
@@ -451,6 +537,71 @@ function drawGraphOnCanvas(context, canvasObj, state) {
       context.font = 'bold 12px Arial';
       context.fillText(state.expl[v], pos.x + 22, pos.y - 5);
     }
+  }
+}
+
+function drawTree() {
+  if (treeEdges.length === 0) {
+    treeCanvas.height = 500;
+    treeCtx.clearRect(0, 0, treeCanvas.width, treeCanvas.height);
+    treeCtx.fillStyle = '#999';
+    treeCtx.font = '14px Arial';
+    treeCtx.textAlign = 'center';
+    treeCtx.fillText('Árvore será construída durante a exploração', treeCanvas.width / 2, treeCanvas.height / 2);
+    return;
+  }
+  
+  let radius = 20;
+  let positions = calculateTreePositions();
+  
+  let maxY = 0;
+  for (let v in positions) {
+    if (positions[v].y > maxY) maxY = positions[v].y;
+  }
+  
+  let canvasHeight = Math.max(500, maxY + 100);
+  treeCanvas.height = canvasHeight;
+  
+  treeCtx.clearRect(0, 0, treeCanvas.width, treeCanvas.height);
+  
+  treeCtx.strokeStyle = '#FF9800';
+  treeCtx.lineWidth = 2;
+  
+  for (let [from, to] of treeEdges) {
+    let fromPos = positions[from];
+    let toPos = positions[to];
+    
+    if (!fromPos || !toPos) continue;
+    
+    treeCtx.beginPath();
+    treeCtx.moveTo(fromPos.x, fromPos.y);
+    treeCtx.lineTo(toPos.x, toPos.y);
+    treeCtx.stroke();
+  }
+  
+  for (let v of vertices) {
+    if (!positions[v]) continue;
+    
+    let pos = positions[v];
+    
+    if (expl[v] !== undefined) {
+      treeCtx.fillStyle = '#4CAF50';
+    } else {
+      treeCtx.fillStyle = '#fff';
+    }
+    
+    treeCtx.strokeStyle = '#333';
+    treeCtx.lineWidth = 2;
+    treeCtx.beginPath();
+    treeCtx.arc(pos.x, pos.y, radius, 0, 2 * Math.PI);
+    treeCtx.fill();
+    treeCtx.stroke();
+    
+    treeCtx.fillStyle = '#000';
+    treeCtx.font = 'bold 16px Arial';
+    treeCtx.textAlign = 'center';
+    treeCtx.textBaseline = 'middle';
+    treeCtx.fillText(v, pos.x, pos.y);
   }
 }
 
@@ -515,6 +666,52 @@ function drawTreeOnCanvas(context, canvasObj, state) {
   }
 }
 
+function calculateTreePositions() {
+  let positions = {};
+  let levels = {};
+  let levelCounts = {};
+  
+  for (let v of vertices) {
+    if (expl[v] === 1) {
+      levels[v] = 0;
+      break;
+    }
+  }
+  
+  for (let [from, to] of treeEdges) {
+    if (levels[from] !== undefined) {
+      levels[to] = levels[from] + 1;
+    }
+  }
+  
+  for (let v in levels) {
+    let level = levels[v];
+    if (!levelCounts[level]) levelCounts[level] = 0;
+    levelCounts[level]++;
+  }
+  
+  let levelIndices = {};
+  let verticalSpacing = 80;
+  let startY = 50;
+  
+  for (let v in levels) {
+    let level = levels[v];
+    if (!levelIndices[level]) levelIndices[level] = 0;
+    
+    let totalInLevel = levelCounts[level];
+    let horizontalSpacing = treeCanvas.width / (totalInLevel + 1);
+    
+    positions[v] = {
+      x: horizontalSpacing * (levelIndices[level] + 1),
+      y: startY + level * verticalSpacing
+    };
+    
+    levelIndices[level]++;
+  }
+  
+  return positions;
+}
+
 function calculateTreePositionsForCanvas(canvasWidth, state) {
   let positions = {};
   let levels = {};
@@ -559,6 +756,70 @@ function calculateTreePositionsForCanvas(canvasWidth, state) {
   }
   
   return positions;
+}
+
+function drawStack() {
+  stackCtx.clearRect(0, 0, stackCanvas.width, stackCanvas.height);
+  
+  let labelText = dfsVersion === 'recursive' ? 'Pilha de Chamadas (DFS recursivo):' : 'Pilha (Stack):';
+  stackCtx.fillStyle = '#333';
+  stackCtx.font = 'bold 16px Arial';
+  stackCtx.textAlign = 'left';
+  stackCtx.fillText(labelText, 20, 25);
+  
+  if (stack.length === 0) {
+    stackCtx.fillStyle = '#999';
+    stackCtx.font = '14px Arial';
+    stackCtx.fillText('[ vazia ]', 350, 25);
+    return;
+  }
+  
+  let boxWidth = 70;
+  let boxHeight = 60;
+  let startX = 100;
+  let startY = 50;
+  let spacing = 5;
+  
+  stackCtx.fillStyle = '#666';
+  stackCtx.font = '12px Arial';
+  stackCtx.textAlign = 'right';
+  stackCtx.fillText('BOTTOM', startX - 10, startY + boxHeight / 2);
+  
+  for (let i = 0; i < stack.length; i++) {
+    let x = startX + i * (boxWidth + spacing);
+    
+    if (i === stack.length - 1) {
+      stackCtx.fillStyle = '#FF9800';
+    } else {
+      stackCtx.fillStyle = '#FFB74D';
+    }
+    
+    stackCtx.fillRect(x, startY, boxWidth, boxHeight);
+    
+    stackCtx.strokeStyle = '#F57C00';
+    stackCtx.lineWidth = 2;
+    stackCtx.strokeRect(x, startY, boxWidth, boxHeight);
+    
+    stackCtx.fillStyle = '#000';
+    stackCtx.font = '12px Arial';
+    stackCtx.textAlign = 'center';
+    stackCtx.textBaseline = 'top';
+    
+    if (dfsVersion === 'recursive') {
+      stackCtx.fillText('DFS', x + boxWidth / 2, startY + 10);
+    }
+    
+    stackCtx.font = 'bold 20px Arial';
+    stackCtx.textBaseline = 'middle';
+    let yOffset = dfsVersion === 'recursive' ? startY + boxHeight / 2 + 5 : startY + boxHeight / 2;
+    stackCtx.fillText(stack[i], x + boxWidth / 2, yOffset);
+  }
+  
+  let lastX = startX + (stack.length - 1) * (boxWidth + spacing);
+  stackCtx.fillStyle = '#666';
+  stackCtx.font = '12px Arial';
+  stackCtx.textAlign = 'left';
+  stackCtx.fillText('TOP', lastX + boxWidth + 10, startY + boxHeight / 2);
 }
 
 function drawStackOnCanvas(context, canvasObj, state, isRecursive) {
@@ -642,9 +903,9 @@ function stepSingleMode() {
   
   stepIndex++;
   
-  drawGraphOnCanvas(ctx, canvas, { marked, expl, stack, cont, currentVertex });
-  drawTreeOnCanvas(treeCtx, treeCanvas, { treeEdges, expl });
-  drawStackOnCanvas(stackCtx, stackCanvas, { stack }, dfsVersion === 'recursive');
+  drawGraph();
+  drawTree();
+  drawStack();
   
   updateSingleModeDisplay();
 }
@@ -748,6 +1009,8 @@ function updateComparisonDisplay() {
 }
 
 function resetSimulation() {
+  simulationStarted = false;
+  
   if (comparisonMode) {
     stateRec = { marked: {}, expl: {}, stack: [], cont: 0, currentVertex: null, treeEdges: [], treeParent: {}, steps: [], stepIndex: 0, output: '' };
     stateIter = { marked: {}, expl: {}, stack: [], cont: 0, currentVertex: null, treeEdges: [], treeParent: {}, steps: [], stepIndex: 0, output: '' };
@@ -767,7 +1030,7 @@ function resetSimulation() {
     drawStackOnCanvas(stackCtxIter, stackCanvasIter, stateIter, false);
   } else {
     marked = {}; expl = {}; stack = []; cont = 0; currentVertex = null;
-    steps = []; stepIndex = 0; simulationStarted = false;
+    steps = []; stepIndex = 0;
     treeEdges = []; treeParent = {}; outputText = '';
     
     document.getElementById('stateDisplay').style.display = 'none';
@@ -775,9 +1038,9 @@ function resetSimulation() {
     
     prepareSteps(dfsVersion, { marked, expl, stack, cont, currentVertex, treeEdges, treeParent, steps, stepIndex });
     
-    drawGraphOnCanvas(ctx, canvas, { marked, expl, stack, cont, currentVertex });
-    drawTreeOnCanvas(treeCtx, treeCanvas, { treeEdges, expl });
-    drawStackOnCanvas(stackCtx, stackCanvas, { stack }, dfsVersion === 'recursive');
+    drawGraph();
+    drawTree();
+    drawStack();
   }
 }
 
@@ -790,7 +1053,7 @@ function prepareSteps(version, state) {
     state.steps.push({ type: 'call_dfs', v: 1, message: 'Chamar DFS(1)' });
     
     let tempMarked = {}, tempExpl = {}, counter = { value: 0 };
-    simulateDFSRecursive(1, tempMarked, tempExpl, counter, state.steps, 0, null);
+    simulateDFSRecursive(1, tempMarked, tempExpl, counter, state.steps, 0);
     
     state.steps.push({ type: 'complete', message: 'DFS completo!' });
   } else {
@@ -831,7 +1094,7 @@ function prepareSteps(version, state) {
   }
 }
 
-function simulateDFSRecursive(v, tempMarked, tempExpl, counter, steps, depth, parent) {
+function simulateDFSRecursive(v, tempMarked, tempExpl, counter, steps, depth) {
   steps.push({ type: 'push', v: v, message: `  ${'  '.repeat(depth)}Entrar em DFS(${v})` });
   steps.push({ type: 'mark', v: v, message: `  ${'  '.repeat(depth)}Marcar vértice ${v}` });
   tempMarked[v] = true;
@@ -846,7 +1109,7 @@ function simulateDFSRecursive(v, tempMarked, tempExpl, counter, steps, depth, pa
       steps.push({ type: 'tree_edge', from: v, to: u, message: `  ${'  '.repeat(depth)}Adicionar aresta ${v}->${u} à árvore` });
       steps.push({ type: 'recursive_call', v: u, message: `  ${'  '.repeat(depth)}Chamar DFS(${u})` });
       
-      simulateDFSRecursive(u, tempMarked, tempExpl, counter, steps, depth + 1, v);
+      simulateDFSRecursive(u, tempMarked, tempExpl, counter, steps, depth + 1);
       
       steps.push({ type: 'return_from', v: u, message: `  ${'  '.repeat(depth)}Retornar de DFS(${u})` });
     } else {
