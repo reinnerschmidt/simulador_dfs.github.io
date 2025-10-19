@@ -378,19 +378,19 @@ function getPositions(canvasWidth, canvasHeight) {
   let positions = {};
   
   if (currentGraphType === 'default1' && vertices.length === 10) {
-    // Layout correto do Padrão 1 (igual ao simulador-dfs-completo.html)
+    // Layout ajustado do Padrão 1 - deslocado para a esquerda
     let scale = canvasWidth / 650;
     positions = {
-      1: { x: 180 * scale, y: 120 },
-      9: { x: 80 * scale, y: 180 },
-      5: { x: 180 * scale, y: 240 },
-      4: { x: 320 * scale, y: 180 },
-      6: { x: 420 * scale, y: 80 },
-      8: { x: 520 * scale, y: 120 },
-      10: { x: 650 * scale, y: 120 },
-      2: { x: 520 * scale, y: 220 },
-      7: { x: 420 * scale, y: 280 },
-      3: { x: 650 * scale, y: 240 }
+      1: { x: 166 * scale, y: 120 },
+      9: { x: 74 * scale, y: 180 },
+      5: { x: 166 * scale, y: 240 },
+      4: { x: 294 * scale, y: 180 },
+      6: { x: 386 * scale, y: 80 },
+      8: { x: 478 * scale, y: 120 },
+      10: { x: 598 * scale, y: 120 },
+      2: { x: 478 * scale, y: 220 },
+      7: { x: 386 * scale, y: 280 },
+      3: { x: 598 * scale, y: 240 }
     };
   } else if (currentGraphType === 'default2' && vertices.length === 8) {
     let scale = canvasWidth / 650;
