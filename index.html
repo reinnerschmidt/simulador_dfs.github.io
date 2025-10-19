@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Simulador DFS - Busca em Profundidade</title>
+<title>Simulador DFS - Comparação Recursivo vs Iterativo</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-  .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  .container { max-width: 1600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
   h2 { color: #333; }
   .controls { margin: 20px 0; padding: 15px; background: #f9f9f9; border-radius: 5px; }
   label { font-weight: bold; margin-right: 10px; }
@@ -18,21 +18,51 @@
   .step-button:hover { background: #0b7dda; }
   .reset-button { background: #f44336; }
   .reset-button:hover { background: #da190b; }
-  #graph-canvas { border: 2px solid #ddd; margin: 20px 0; background: white; display: block; }
-  #stack-canvas { border: 2px solid #ddd; margin: 20px 0; background: white; display: block; }
+  .version-button { background: #9C27B0; }
+  .version-button:hover { background: #7B1FA2; }
+  .version-button.active { background: #6A1B9A; border: 3px solid #4A148C; }
+  .comparison-button { background: #FF6F00; }
+  .comparison-button:hover { background: #E65100; }
+  .comparison-button.active { background: #D84315; border: 3px solid #BF360C; }
+  
+  /* Single Mode */
+  .single-mode .canvas-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .single-mode .canvas-wrapper { overflow: auto; max-height: 500px; border: 2px solid #ddd; background: white; }
+  .single-mode canvas { display: block; margin: 0; }
+  .single-mode #stack-canvas { grid-column: 1 / -1; }
+  
+  /* Comparison Mode */
+  .comparison-mode .comparison-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+  .comparison-mode .comparison-section { border: 2px solid #ddd; border-radius: 8px; padding: 15px; background: #fafafa; }
+  .comparison-mode .section-title { font-weight: bold; font-size: 18px; color: #fff; padding: 10px; margin: -15px -15px 15px -15px; border-radius: 6px 6px 0 0; text-align: center; }
+  .comparison-mode .recursive-title { background: #6A1B9A; }
+  .comparison-mode .iterative-title { background: #D84315; }
+  .comparison-mode .canvas-wrapper { overflow: auto; max-height: 400px; border: 2px solid #ddd; background: white; margin: 10px 0; }
+  .comparison-mode canvas { display: block; margin: 0; }
+  .comparison-mode .stack-comparison { grid-column: 1 / -1; }
+  .comparison-mode .output-comparison { grid-column: 1 / -1; }
+  
+  .canvas-label { font-weight: bold; color: #555; margin-top: 10px; margin-bottom: 5px; }
   #output { margin-top: 20px; white-space: pre-wrap; font-family: monospace; border: 1px solid #ddd; padding: 15px; background: #f9f9f9; max-height: 300px; overflow-y: auto; font-size: 14px; }
+  .output-box { white-space: pre-wrap; font-family: monospace; border: 1px solid #ddd; padding: 15px; background: #f9f9f9; max-height: 250px; overflow-y: auto; font-size: 13px; margin-top: 10px; }
   .state-display { margin: 15px 0; padding: 15px; background: #e3f2fd; border-left: 4px solid #2196F3; border-radius: 4px; }
   .state-display h3 { margin-top: 0; color: #1976D2; }
   .var-display { display: inline-block; margin: 5px 15px 5px 0; padding: 5px 10px; background: white; border-radius: 3px; font-family: monospace; }
   .stack-display { background: #ffe0b2; padding: 10px; border-radius: 4px; margin: 10px 0; }
-  .canvas-label { font-weight: bold; color: #555; margin-top: 10px; }
+  .version-info { display: inline-block; margin-left: 20px; padding: 5px 10px; background: #e1bee7; border-radius: 4px; font-size: 14px; font-weight: bold; color: #4A148C; }
+  
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
-<div class="container">
-<h2>Simulador DFS - Busca em Profundidade (Recursivo)</h2>
+<div class="container single-mode" id="mainContainer">
+<h2>Simulador DFS - Busca em Profundidade <span class="version-info" id="versionInfo">Recursivo</span></h2>
 
 <div class="controls">
+  <button class="version-button active" id="recursiveBtn" onclick="setVersion('recursive')">Versão Recursiva</button>
+  <button class="version-button" id="iterativeBtn" onclick="setVersion('iterative')">Versão Iterativa</button>
+  <button class="comparison-button" id="comparisonBtn" onclick="toggleComparison()">🔍 Modo Comparação</button>
+  <br><br>
   <label for="numVertices">Número de vértices:</label>
   <input type="number" id="numVertices" value="8" min="3" max="12" />
   <button onclick="generateRandomGraph()">Gerar Grafo Aleatório</button>
@@ -42,44 +72,210 @@
   <button class="reset-button" onclick="resetSimulation()">Reiniciar</button>
 </div>
 
-<div class="canvas-label">Grafo (não orientado):</div>
-<canvas id="graph-canvas" width="900" height="500"></canvas>
+<!-- SINGLE MODE LAYOUT -->
+<div id="singleModeLayout">
+  <div class="canvas-container">
+    <div>
+      <div class="canvas-label">Grafo (não orientado):</div>
+      <div class="canvas-wrapper">
+        <canvas id="graph-canvas" width="650" height="500"></canvas>
+      </div>
+    </div>
+    <div>
+      <div class="canvas-label">Árvore de Exploração DFS:</div>
+      <div class="canvas-wrapper">
+        <canvas id="tree-canvas" width="650" height="500"></canvas>
+      </div>
+    </div>
+  </div>
 
-<div class="canvas-label">Pilha de Chamadas Recursivas:</div>
-<canvas id="stack-canvas" width="900" height="150"></canvas>
+  <div class="canvas-label" id="stackLabel">Pilha:</div>
+  <canvas id="stack-canvas" width="1300" height="150"></canvas>
 
-<div class="state-display" id="stateDisplay" style="display:none;">
-  <h3>Estado Atual</h3>
-  <div id="variables"></div>
-  <div class="stack-display">
-    <strong>Pilha de chamadas:</strong> <span id="stackContent">[]</span>
+  <div class="state-display" id="stateDisplay" style="display:none;">
+    <h3>Estado Atual</h3>
+    <div id="variables"></div>
+    <div class="stack-display">
+      <strong id="stackDisplayLabel">Pilha:</strong> <span id="stackContent">[]</span>
+    </div>
+  </div>
+
+  <div id="output"></div>
+</div>
+
+<!-- COMPARISON MODE LAYOUT -->
+<div id="comparisonModeLayout" class="hidden">
+  <div class="comparison-container">
+    <!-- RECURSIVE SECTION -->
+    <div class="comparison-section">
+      <div class="section-title recursive-title">DFS RECURSIVO</div>
+      <div class="canvas-label">Grafo com Exploração:</div>
+      <div class="canvas-wrapper">
+        <canvas id="graph-canvas-rec" width="600" height="400"></canvas>
+      </div>
+      <div class="canvas-label">Árvore de Exploração:</div>
+      <div class="canvas-wrapper">
+        <canvas id="tree-canvas-rec" width="600" height="400"></canvas>
+      </div>
+    </div>
+    
+    <!-- ITERATIVE SECTION -->
+    <div class="comparison-section">
+      <div class="section-title iterative-title">DFS ITERATIVO</div>
+      <div class="canvas-label">Grafo com Exploração:</div>
+      <div class="canvas-wrapper">
+        <canvas id="graph-canvas-iter" width="600" height="400"></canvas>
+      </div>
+      <div class="canvas-label">Árvore de Exploração:</div>
+      <div class="canvas-wrapper">
+        <canvas id="tree-canvas-iter" width="600" height="400"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- STACK COMPARISON -->
+  <div class="comparison-container stack-comparison">
+    <div class="comparison-section">
+      <div class="section-title recursive-title">Pilha de Chamadas (Recursivo)</div>
+      <canvas id="stack-canvas-rec" width="750" height="150"></canvas>
+      <div class="state-display">
+        <div id="variables-rec"></div>
+        <div class="stack-display">
+          <strong>Pilha:</strong> <span id="stackContent-rec">[]</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="comparison-section">
+      <div class="section-title iterative-title">Pilha (Iterativo)</div>
+      <canvas id="stack-canvas-iter" width="750" height="150"></canvas>
+      <div class="state-display">
+        <div id="variables-iter"></div>
+        <div class="stack-display">
+          <strong>Pilha:</strong> <span id="stackContent-iter">[]</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OUTPUT COMPARISON -->
+  <div class="comparison-container output-comparison">
+    <div class="comparison-section">
+      <div class="section-title recursive-title">Passo a Passo (Recursivo)</div>
+      <div class="output-box" id="output-rec"></div>
+    </div>
+    
+    <div class="comparison-section">
+      <div class="section-title iterative-title">Passo a Passo (Iterativo)</div>
+      <div class="output-box" id="output-iter"></div>
+    </div>
   </div>
 </div>
 
-<div id="output"></div>
 </div>
 
 <script>
 let vertices = [];
 let edges = [];
 let adjList = {};
-let marked = {};
-let expl = {};
-let callStack = [];
-let cont = 0;
-let currentVertex = null;
-let steps = [];
-let stepIndex = 0;
-let simulationStarted = false;
-let canvas, ctx, stackCanvas, stackCtx;
 let currentGraphType = 'default1';
+let comparisonMode = false;
+
+// Single mode state
+let marked = {}, expl = {}, stack = [], cont = 0, currentVertex = null;
+let steps = [], stepIndex = 0, simulationStarted = false;
+let treeEdges = [], treeParent = {};
+let dfsVersion = 'recursive';
+let outputText = '';
+
+// Comparison mode state
+let stateRec = { marked: {}, expl: {}, stack: [], cont: 0, currentVertex: null, treeEdges: [], treeParent: {}, steps: [], stepIndex: 0, output: '' };
+let stateIter = { marked: {}, expl: {}, stack: [], cont: 0, currentVertex: null, treeEdges: [], treeParent: {}, steps: [], stepIndex: 0, output: '' };
+
+let canvas, ctx, treeCanvas, treeCtx, stackCanvas, stackCtx;
+let canvasRec, ctxRec, treeCanvasRec, treeCtxRec, stackCanvasRec, stackCtxRec;
+let canvasIter, ctxIter, treeCanvasIter, treeCtxIter, stackCanvasIter, stackCtxIter;
 
 function init() {
+  // Single mode canvases
   canvas = document.getElementById('graph-canvas');
   ctx = canvas.getContext('2d');
+  treeCanvas = document.getElementById('tree-canvas');
+  treeCtx = treeCanvas.getContext('2d');
   stackCanvas = document.getElementById('stack-canvas');
   stackCtx = stackCanvas.getContext('2d');
-  loadDefaultGraph();
+  
+  // Comparison mode canvases
+  canvasRec = document.getElementById('graph-canvas-rec');
+  ctxRec = canvasRec.getContext('2d');
+  treeCanvasRec = document.getElementById('tree-canvas-rec');
+  treeCtxRec = treeCanvasRec.getContext('2d');
+  stackCanvasRec = document.getElementById('stack-canvas-rec');
+  stackCtxRec = stackCanvasRec.getContext('2d');
+  
+  canvasIter = document.getElementById('graph-canvas-iter');
+  ctxIter = canvasIter.getContext('2d');
+  treeCanvasIter = document.getElementById('tree-canvas-iter');
+  treeCtxIter = treeCanvasIter.getContext('2d');
+  stackCanvasIter = document.getElementById('stack-canvas-iter');
+  stackCtxIter = stackCanvasIter.getContext('2d');
+  
+  loadDefaultGraph2();
+}
+
+function toggleComparison() {
+  comparisonMode = !comparisonMode;
+  
+  let container = document.getElementById('mainContainer');
+  let singleLayout = document.getElementById('singleModeLayout');
+  let comparisonLayout = document.getElementById('comparisonModeLayout');
+  let comparisonBtn = document.getElementById('comparisonBtn');
+  let versionInfo = document.getElementById('versionInfo');
+  
+  if (comparisonMode) {
+    container.classList.remove('single-mode');
+    container.classList.add('comparison-mode');
+    singleLayout.classList.add('hidden');
+    comparisonLayout.classList.remove('hidden');
+    comparisonBtn.classList.add('active');
+    comparisonBtn.textContent = '← Modo Individual';
+    versionInfo.textContent = 'Comparação';
+    
+    document.getElementById('recursiveBtn').disabled = true;
+    document.getElementById('iterativeBtn').disabled = true;
+  } else {
+    container.classList.remove('comparison-mode');
+    container.classList.add('single-mode');
+    singleLayout.classList.remove('hidden');
+    comparisonLayout.classList.add('hidden');
+    comparisonBtn.classList.remove('active');
+    comparisonBtn.textContent = '🔍 Modo Comparação';
+    versionInfo.textContent = dfsVersion === 'recursive' ? 'Recursivo' : 'Iterativo';
+    
+    document.getElementById('recursiveBtn').disabled = false;
+    document.getElementById('iterativeBtn').disabled = false;
+  }
+  
+  resetSimulation();
+}
+
+function setVersion(version) {
+  if (comparisonMode) return;
+  
+  dfsVersion = version;
+  
+  document.getElementById('recursiveBtn').classList.remove('active');
+  document.getElementById('iterativeBtn').classList.remove('active');
+  
+  if (version === 'recursive') {
+    document.getElementById('recursiveBtn').classList.add('active');
+    document.getElementById('versionInfo').textContent = 'Recursivo';
+  } else {
+    document.getElementById('iterativeBtn').classList.add('active');
+    document.getElementById('versionInfo').textContent = 'Iterativo';
+  }
+  
+  resetSimulation();
 }
 
 function loadDefaultGraph() {
@@ -87,14 +283,9 @@ function loadDefaultGraph() {
   vertices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   
   let edgeList = [
-    [1, 9], [1, 4], [1, 5],
-    [9, 5],
-    [5, 4],
-    [4, 6], [4, 2], [4, 7], [4, 8],
-    [6, 8],
-    [8, 2], [8, 3], [8, 10],
-    [2, 3], [2, 7],
-    [7, 3]
+    [1, 9], [1, 4], [1, 5], [9, 5], [5, 4],
+    [4, 6], [4, 2], [4, 7], [4, 8], [6, 8],
+    [8, 2], [8, 3], [8, 10], [2, 3], [2, 7], [7, 3]
   ];
   
   buildGraphFromEdges(edgeList);
@@ -102,23 +293,11 @@ function loadDefaultGraph() {
 
 function loadDefaultGraph2() {
   currentGraphType = 'default2';
-  // Grafo padrão 2: A-B-C-D-E-F-G-H (8 vértices)
-  // Usando números 1-8 para A-H
   vertices = [1, 2, 3, 4, 5, 6, 7, 8];
   
-  // Arestas baseadas na imagem:
-  // A(1) -> B(2), C(3)
-  // B(2) -> D(4), E(5)
-  // C(3) -> F(6), G(7)
-  // D(4), E(5), F(6), G(7) -> H(8)
   let edgeList = [
-    [1, 2], [1, 3],
-    [2, 4], [2, 5],
-    [3, 6], [3, 7],
-    [4, 8],
-    [5, 8],
-    [6, 8],
-    [7, 8]
+    [1, 2], [1, 3], [2, 4], [2, 5],
+    [3, 6], [3, 7], [4, 8], [5, 8], [6, 8], [7, 8]
   ];
   
   buildGraphFromEdges(edgeList);
@@ -133,23 +312,16 @@ function generateRandomGraph() {
   }
   
   vertices = [];
-  for (let i = 1; i <= n; i++) {
-    vertices.push(i);
-  }
+  for (let i = 1; i <= n; i++) vertices.push(i);
   
   let edgeList = [];
-  let connected = [1];
-  let unconnected = [];
-  for (let i = 2; i <= n; i++) {
-    unconnected.push(i);
-  }
+  let connected = [1], unconnected = [];
+  for (let i = 2; i <= n; i++) unconnected.push(i);
   
   while (unconnected.length > 0) {
     let fromIdx = Math.floor(Math.random() * connected.length);
     let toIdx = Math.floor(Math.random() * unconnected.length);
-    let from = connected[fromIdx];
-    let to = unconnected[toIdx];
-    
+    let from = connected[fromIdx], to = unconnected[toIdx];
     edgeList.push([from, to]);
     connected.push(to);
     unconnected.splice(toIdx, 1);
@@ -159,7 +331,6 @@ function generateRandomGraph() {
   for (let i = 0; i < numExtraEdges; i++) {
     let from = Math.floor(Math.random() * n) + 1;
     let to = Math.floor(Math.random() * n) + 1;
-    
     if (from !== to && !edgeList.some(e => (e[0] === from && e[1] === to) || (e[0] === to && e[1] === from))) {
       edgeList.push([from, to]);
     }
@@ -176,60 +347,38 @@ function buildGraphFromEdges(edgeList) {
   }
   
   adjList = {};
-  for (let v of vertices) {
-    adjList[v] = [];
-  }
+  for (let v of vertices) adjList[v] = [];
   
   for (let [u, v] of edges) {
-    if (!adjList[u].includes(v)) {
-      adjList[u].push(v);
-    }
+    if (!adjList[u].includes(v)) adjList[u].push(v);
   }
   
   for (let v of vertices) {
     adjList[v].sort((a, b) => a - b);
   }
   
-  drawGraph();
-  drawStack();
   resetSimulation();
   document.getElementById('stepBtn').disabled = false;
 }
 
-function drawGraph() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
-  let radius = 20;
+function getPositions(canvasWidth, canvasHeight) {
   let positions = {};
   
-  if (currentGraphType === 'default1' && vertices.length === 10) {
+  if (currentGraphType === 'default2' && vertices.length === 8) {
+    let scale = canvasWidth / 650;
     positions = {
-      1: { x: 180, y: 120 },
-      9: { x: 80, y: 180 },
-      5: { x: 180, y: 240 },
-      4: { x: 320, y: 180 },
-      6: { x: 420, y: 80 },
-      8: { x: 520, y: 120 },
-      10: { x: 650, y: 120 },
-      2: { x: 520, y: 220 },
-      7: { x: 420, y: 280 },
-      3: { x: 650, y: 240 }
-    };
-  } else if (currentGraphType === 'default2' && vertices.length === 8) {
-    // Layout hierárquico para o padrão 2
-    positions = {
-      1: { x: 450, y: 80 },   // A (topo)
-      2: { x: 300, y: 180 },  // B
-      3: { x: 600, y: 180 },  // C
-      4: { x: 220, y: 280 },  // D
-      5: { x: 380, y: 280 },  // E
-      6: { x: 520, y: 280 },  // F
-      7: { x: 680, y: 280 },  // G
-      8: { x: 450, y: 400 }   // H (base)
+      1: { x: 325 * scale, y: 80 },
+      2: { x: 200 * scale, y: 180 },
+      3: { x: 450 * scale, y: 180 },
+      4: { x: 120 * scale, y: 280 },
+      5: { x: 280 * scale, y: 280 },
+      6: { x: 370 * scale, y: 280 },
+      7: { x: 530 * scale, y: 280 },
+      8: { x: 325 * scale, y: 380 }
     };
   } else {
-    let centerX = canvas.width / 2;
-    let centerY = canvas.height / 2;
+    let centerX = canvasWidth / 2;
+    let centerY = canvasHeight / 2;
     let circleRadius = Math.min(centerX, centerY) - 50;
     let n = vertices.length;
     
@@ -242,8 +391,19 @@ function drawGraph() {
     }
   }
   
-  ctx.strokeStyle = '#666';
-  ctx.lineWidth = 2;
+  return positions;
+}
+
+function drawGraphOnCanvas(context, canvasObj, state) {
+  let canvasWidth = canvasObj.width;
+  let canvasHeight = canvasObj.height;
+  context.clearRect(0, 0, canvasWidth, canvasHeight);
+  
+  let radius = 18;
+  let positions = getPositions(canvasWidth, canvasHeight);
+  
+  context.strokeStyle = '#666';
+  context.lineWidth = 2;
   let drawnEdges = new Set();
   
   for (let [from, to] of edges) {
@@ -254,169 +414,216 @@ function drawGraph() {
     let fromPos = positions[from];
     let toPos = positions[to];
     
-    ctx.beginPath();
-    ctx.moveTo(fromPos.x, fromPos.y);
-    ctx.lineTo(toPos.x, toPos.y);
-    ctx.stroke();
+    context.beginPath();
+    context.moveTo(fromPos.x, fromPos.y);
+    context.lineTo(toPos.x, toPos.y);
+    context.stroke();
   }
   
   for (let v of vertices) {
     let pos = positions[v];
     
-    if (marked[v]) {
-      ctx.fillStyle = '#4CAF50';
-    } else if (currentVertex === v) {
-      ctx.fillStyle = '#FFC107';
-    } else if (callStack.includes(v)) {
-      ctx.fillStyle = '#FF9800';
+    if (state.marked[v]) {
+      context.fillStyle = '#4CAF50';
+    } else if (state.currentVertex === v) {
+      context.fillStyle = '#FFC107';
+    } else if (state.stack.includes(v)) {
+      context.fillStyle = '#FF9800';
     } else {
-      ctx.fillStyle = '#fff';
+      context.fillStyle = '#fff';
     }
     
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(pos.x, pos.y, radius, 0, 2 * Math.PI);
-    ctx.fill();
-    ctx.stroke();
+    context.strokeStyle = '#333';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.arc(pos.x, pos.y, radius, 0, 2 * Math.PI);
+    context.fill();
+    context.stroke();
     
-    ctx.fillStyle = '#000';
-    ctx.font = 'bold 16px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(v, pos.x, pos.y);
+    context.fillStyle = '#000';
+    context.font = 'bold 14px Arial';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText(v, pos.x, pos.y);
     
-    if (expl[v] !== undefined) {
-      ctx.fillStyle = '#c62828';
-      ctx.font = 'bold 14px Arial';
-      ctx.fillText(expl[v], pos.x + 25, pos.y - 5);
+    if (state.expl[v] !== undefined) {
+      context.fillStyle = '#c62828';
+      context.font = 'bold 12px Arial';
+      context.fillText(state.expl[v], pos.x + 22, pos.y - 5);
     }
   }
 }
 
-function drawStack() {
-  stackCtx.clearRect(0, 0, stackCanvas.width, stackCanvas.height);
+function drawTreeOnCanvas(context, canvasObj, state) {
+  let canvasWidth = canvasObj.width;
+  let canvasHeight = canvasObj.height;
   
-  stackCtx.fillStyle = '#333';
-  stackCtx.font = 'bold 16px Arial';
-  stackCtx.textAlign = 'left';
-  stackCtx.fillText('Pilha de Chamadas (DFS recursivo):', 20, 25);
-  
-  if (callStack.length === 0) {
-    stackCtx.fillStyle = '#999';
-    stackCtx.font = '14px Arial';
-    stackCtx.fillText('[ vazia ]', 350, 25);
+  if (state.treeEdges.length === 0) {
+    canvasObj.height = canvasHeight;
+    context.clearRect(0, 0, canvasWidth, canvasHeight);
+    context.fillStyle = '#999';
+    context.font = '12px Arial';
+    context.textAlign = 'center';
+    context.fillText('Árvore em construção...', canvasWidth / 2, canvasHeight / 2);
     return;
   }
   
-  let boxWidth = 70;
-  let boxHeight = 60;
-  let startX = 100;
+  let radius = 18;
+  let positions = calculateTreePositionsForCanvas(canvasWidth, state);
+  
+  let maxY = 0;
+  for (let v in positions) {
+    if (positions[v].y > maxY) maxY = positions[v].y;
+  }
+  
+  let newHeight = Math.max(canvasHeight, maxY + 80);
+  canvasObj.height = newHeight;
+  
+  context.clearRect(0, 0, canvasWidth, newHeight);
+  
+  context.strokeStyle = '#FF9800';
+  context.lineWidth = 2;
+  
+  for (let [from, to] of state.treeEdges) {
+    let fromPos = positions[from];
+    let toPos = positions[to];
+    if (!fromPos || !toPos) continue;
+    
+    context.beginPath();
+    context.moveTo(fromPos.x, fromPos.y);
+    context.lineTo(toPos.x, toPos.y);
+    context.stroke();
+  }
+  
+  for (let v of vertices) {
+    if (!positions[v]) continue;
+    let pos = positions[v];
+    
+    context.fillStyle = state.expl[v] !== undefined ? '#4CAF50' : '#fff';
+    context.strokeStyle = '#333';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.arc(pos.x, pos.y, radius, 0, 2 * Math.PI);
+    context.fill();
+    context.stroke();
+    
+    context.fillStyle = '#000';
+    context.font = 'bold 14px Arial';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText(v, pos.x, pos.y);
+  }
+}
+
+function calculateTreePositionsForCanvas(canvasWidth, state) {
+  let positions = {};
+  let levels = {};
+  let levelCounts = {};
+  
+  for (let v of vertices) {
+    if (state.expl[v] === 1) {
+      levels[v] = 0;
+      break;
+    }
+  }
+  
+  for (let [from, to] of state.treeEdges) {
+    if (levels[from] !== undefined) {
+      levels[to] = levels[from] + 1;
+    }
+  }
+  
+  for (let v in levels) {
+    let level = levels[v];
+    if (!levelCounts[level]) levelCounts[level] = 0;
+    levelCounts[level]++;
+  }
+  
+  let levelIndices = {};
+  let verticalSpacing = 70;
+  let startY = 40;
+  
+  for (let v in levels) {
+    let level = levels[v];
+    if (!levelIndices[level]) levelIndices[level] = 0;
+    
+    let totalInLevel = levelCounts[level];
+    let horizontalSpacing = canvasWidth / (totalInLevel + 1);
+    
+    positions[v] = {
+      x: horizontalSpacing * (levelIndices[level] + 1),
+      y: startY + level * verticalSpacing
+    };
+    
+    levelIndices[level]++;
+  }
+  
+  return positions;
+}
+
+function drawStackOnCanvas(context, canvasObj, state, isRecursive) {
+  context.clearRect(0, 0, canvasObj.width, canvasObj.height);
+  
+  if (state.stack.length === 0) {
+    context.fillStyle = '#999';
+    context.font = '14px Arial';
+    context.textAlign = 'center';
+    context.fillText('[ vazia ]', canvasObj.width / 2, 80);
+    return;
+  }
+  
+  let boxWidth = 65;
+  let boxHeight = 55;
+  let startX = 80;
   let startY = 50;
   let spacing = 5;
   
-  stackCtx.fillStyle = '#666';
-  stackCtx.font = '12px Arial';
-  stackCtx.textAlign = 'right';
-  stackCtx.fillText('BOTTOM', startX - 10, startY + boxHeight / 2);
+  context.fillStyle = '#666';
+  context.font = '11px Arial';
+  context.textAlign = 'right';
+  context.fillText('BOTTOM', startX - 10, startY + boxHeight / 2);
   
-  for (let i = 0; i < callStack.length; i++) {
+  for (let i = 0; i < state.stack.length; i++) {
     let x = startX + i * (boxWidth + spacing);
     
-    if (i === callStack.length - 1) {
-      stackCtx.fillStyle = '#FF9800';
-    } else {
-      stackCtx.fillStyle = '#FFB74D';
+    context.fillStyle = i === state.stack.length - 1 ? '#FF9800' : '#FFB74D';
+    context.fillRect(x, startY, boxWidth, boxHeight);
+    
+    context.strokeStyle = '#F57C00';
+    context.lineWidth = 2;
+    context.strokeRect(x, startY, boxWidth, boxHeight);
+    
+    context.fillStyle = '#000';
+    context.font = '11px Arial';
+    context.textAlign = 'center';
+    context.textBaseline = 'top';
+    
+    if (isRecursive) {
+      context.fillText('DFS', x + boxWidth / 2, startY + 8);
     }
     
-    stackCtx.fillRect(x, startY, boxWidth, boxHeight);
-    
-    stackCtx.strokeStyle = '#F57C00';
-    stackCtx.lineWidth = 2;
-    stackCtx.strokeRect(x, startY, boxWidth, boxHeight);
-    
-    stackCtx.fillStyle = '#000';
-    stackCtx.font = '12px Arial';
-    stackCtx.textAlign = 'center';
-    stackCtx.textBaseline = 'top';
-    stackCtx.fillText('DFS', x + boxWidth / 2, startY + 10);
-    
-    stackCtx.font = 'bold 20px Arial';
-    stackCtx.textBaseline = 'middle';
-    stackCtx.fillText(callStack[i], x + boxWidth / 2, startY + boxHeight / 2 + 5);
+    context.font = 'bold 18px Arial';
+    context.textBaseline = 'middle';
+    let yOffset = isRecursive ? startY + boxHeight / 2 + 5 : startY + boxHeight / 2;
+    context.fillText(state.stack[i], x + boxWidth / 2, yOffset);
   }
   
-  let lastX = startX + (callStack.length - 1) * (boxWidth + spacing);
-  stackCtx.fillStyle = '#666';
-  stackCtx.font = '12px Arial';
-  stackCtx.textAlign = 'left';
-  stackCtx.fillText('TOP', lastX + boxWidth + 10, startY + boxHeight / 2);
-}
-
-function resetSimulation() {
-  marked = {};
-  expl = {};
-  callStack = [];
-  cont = 0;
-  currentVertex = null;
-  steps = [];
-  stepIndex = 0;
-  simulationStarted = false;
-  
-  document.getElementById('output').textContent = '';
-  document.getElementById('stateDisplay').style.display = 'none';
-  
-  if (vertices.length > 0) {
-    prepareSimulation();
-    drawGraph();
-    drawStack();
-  }
-}
-
-function prepareSimulation() {
-  steps = [];
-  
-  steps.push({ type: 'init', message: 'cont = 0' });
-  steps.push({ type: 'unmark_all', message: 'Desmarcar todos os vértices' });
-  steps.push({ type: 'call_dfs', v: 1, message: 'Chamar DFS(1)' });
-  
-  let tempMarked = {};
-  let tempExpl = {};
-  let counter = { value: 0 };
-  
-  simulateDFS(1, tempMarked, tempExpl, counter, steps, 0);
-  
-  steps.push({ type: 'complete', message: 'DFS completo!' });
-}
-
-function simulateDFS(v, tempMarked, tempExpl, counter, steps, depth) {
-  steps.push({ type: 'push_stack', v: v, message: `  ${'  '.repeat(depth)}Entrar em DFS(${v})` });
-  steps.push({ type: 'mark', v: v, message: `  ${'  '.repeat(depth)}Marcar vértice ${v}` });
-  tempMarked[v] = true;
-  
-  counter.value++;
-  steps.push({ type: 'expl', v: v, cont: counter.value, message: `  ${'  '.repeat(depth)}expl[${v}] = ++cont = ${counter.value}` });
-  tempExpl[v] = counter.value;
-  
-  steps.push({ type: 'explore', v: v, message: `  ${'  '.repeat(depth)}Explorando vértice ${v}` });
-  
-  for (let u of adjList[v]) {
-    if (!tempMarked[u]) {
-      steps.push({ type: 'check_unmarked', from: v, to: u, message: `  ${'  '.repeat(depth)}Aresta <${v},${u}>: ${u} está desmarcado` });
-      steps.push({ type: 'recursive_call', v: u, message: `  ${'  '.repeat(depth)}Chamar DFS(${u})` });
-      
-      simulateDFS(u, tempMarked, tempExpl, counter, steps, depth + 1);
-      
-      steps.push({ type: 'return_from', v: u, message: `  ${'  '.repeat(depth)}Retornar de DFS(${u})` });
-    } else {
-      steps.push({ type: 'check_marked', from: v, to: u, message: `  ${'  '.repeat(depth)}Aresta <${v},${u}>: ${u} já marcado` });
-    }
-  }
-  
-  steps.push({ type: 'pop_stack', v: v, message: `  ${'  '.repeat(depth)}Sair de DFS(${v})` });
+  let lastX = startX + (state.stack.length - 1) * (boxWidth + spacing);
+  context.fillStyle = '#666';
+  context.font = '11px Arial';
+  context.textAlign = 'left';
+  context.fillText('TOP', lastX + boxWidth + 10, startY + boxHeight / 2);
 }
 
 function stepSimulation() {
+  if (comparisonMode) {
+    stepComparisonMode();
+  } else {
+    stepSingleMode();
+  }
+}
+
+function stepSingleMode() {
   if (stepIndex >= steps.length) return;
   
   if (!simulationStarted) {
@@ -425,74 +632,229 @@ function stepSimulation() {
   }
   
   let step = steps[stepIndex];
-  let output = document.getElementById('output').textContent;
+  executeStep(step, { marked, expl, stack, cont, currentVertex, treeEdges, treeParent });
   
-  switch(step.type) {
-    case 'init':
-    case 'unmark_all':
-    case 'call_dfs':
-      output += step.message + '\n';
-      break;
-      
-    case 'push_stack':
-      callStack.push(step.v);
-      currentVertex = step.v;
-      output += step.message + '\n';
-      break;
-      
-    case 'mark':
-      marked[step.v] = true;
-      output += step.message + '\n';
-      break;
-      
-    case 'expl':
-      expl[step.v] = step.cont;
-      cont = step.cont;
-      output += step.message + '\n';
-      break;
-      
-    case 'explore':
-      output += step.message + '\n';
-      break;
-      
-    case 'check_unmarked':
-    case 'check_marked':
-    case 'recursive_call':
-    case 'return_from':
-      output += step.message + '\n';
-      break;
-      
-    case 'pop_stack':
-      callStack.pop();
-      currentVertex = callStack.length > 0 ? callStack[callStack.length - 1] : null;
-      output += step.message + '\n';
-      break;
-      
-    case 'complete':
-      output += '\n' + step.message + '\n';
-      document.getElementById('stepBtn').disabled = true;
-      currentVertex = null;
-      break;
+  if (step.message) {
+    outputText += step.message + '\n';
+    document.getElementById('output').textContent = outputText;
+    document.getElementById('output').scrollTop = document.getElementById('output').scrollHeight;
   }
   
-  document.getElementById('output').textContent = output;
-  document.getElementById('output').scrollTop = document.getElementById('output').scrollHeight;
-  
-  updateStateDisplay();
-  drawGraph();
-  drawStack();
-  
   stepIndex++;
+  
+  drawGraphOnCanvas(ctx, canvas, { marked, expl, stack, cont, currentVertex });
+  drawTreeOnCanvas(treeCtx, treeCanvas, { treeEdges, expl });
+  drawStackOnCanvas(stackCtx, stackCanvas, { stack }, dfsVersion === 'recursive');
+  
+  updateSingleModeDisplay();
 }
 
-function updateStateDisplay() {
+function stepComparisonMode() {
+  let hasRecStep = stateRec.stepIndex < stateRec.steps.length;
+  let hasIterStep = stateIter.stepIndex < stateIter.steps.length;
+  
+  if (!hasRecStep && !hasIterStep) return;
+  
+  if (hasRecStep) {
+    let step = stateRec.steps[stateRec.stepIndex];
+    executeStep(step, stateRec);
+    
+    if (step.message) {
+      stateRec.output += step.message + '\n';
+      document.getElementById('output-rec').textContent = stateRec.output;
+      document.getElementById('output-rec').scrollTop = document.getElementById('output-rec').scrollHeight;
+    }
+    
+    stateRec.stepIndex++;
+  }
+  
+  if (hasIterStep) {
+    let step = stateIter.steps[stateIter.stepIndex];
+    executeStep(step, stateIter);
+    
+    if (step.message) {
+      stateIter.output += step.message + '\n';
+      document.getElementById('output-iter').textContent = stateIter.output;
+      document.getElementById('output-iter').scrollTop = document.getElementById('output-iter').scrollHeight;
+    }
+    
+    stateIter.stepIndex++;
+  }
+  
+  drawGraphOnCanvas(ctxRec, canvasRec, stateRec);
+  drawTreeOnCanvas(treeCtxRec, treeCanvasRec, stateRec);
+  drawStackOnCanvas(stackCtxRec, stackCanvasRec, stateRec, true);
+  
+  drawGraphOnCanvas(ctxIter, canvasIter, stateIter);
+  drawTreeOnCanvas(treeCtxIter, treeCanvasIter, stateIter);
+  drawStackOnCanvas(stackCtxIter, stackCanvasIter, stateIter, false);
+  
+  updateComparisonDisplay();
+}
+
+function executeStep(step, state) {
+  switch(step.type) {
+    case 'push':
+      state.stack.push(step.v);
+      state.currentVertex = step.v;
+      break;
+    case 'top':
+      state.currentVertex = step.v;
+      break;
+    case 'pop':
+      state.stack.pop();
+      state.currentVertex = state.stack.length > 0 ? state.stack[state.stack.length - 1] : null;
+      break;
+    case 'mark':
+      state.marked[step.v] = true;
+      break;
+    case 'expl':
+      state.expl[step.v] = step.cont;
+      state.cont = step.cont;
+      break;
+    case 'tree_edge':
+      state.treeEdges.push([step.from, step.to]);
+      state.treeParent[step.to] = step.from;
+      break;
+    case 'complete':
+      state.currentVertex = null;
+      break;
+  }
+}
+
+function updateSingleModeDisplay() {
   let varsHtml = `
     <div class="var-display"><strong>cont:</strong> ${cont}</div>
-    <div class="var-display"><strong>Profundidade:</strong> ${callStack.length}</div>
+    <div class="var-display"><strong>${dfsVersion === 'recursive' ? 'Profundidade' : 'Tamanho'}:</strong> ${stack.length}</div>
   `;
-  
   document.getElementById('variables').innerHTML = varsHtml;
-  document.getElementById('stackContent').textContent = '[' + callStack.map(v => `DFS(${v})`).join(', ') + ']';
+  
+  let stackDisplay = stack.map(v => dfsVersion === 'recursive' ? `DFS(${v})` : v).join(', ');
+  document.getElementById('stackContent').textContent = '[' + stackDisplay + ']';
+}
+
+function updateComparisonDisplay() {
+  document.getElementById('variables-rec').innerHTML = `
+    <div class="var-display"><strong>cont:</strong> ${stateRec.cont}</div>
+    <div class="var-display"><strong>Profundidade:</strong> ${stateRec.stack.length}</div>
+  `;
+  document.getElementById('stackContent-rec').textContent = '[' + stateRec.stack.map(v => `DFS(${v})`).join(', ') + ']';
+  
+  document.getElementById('variables-iter').innerHTML = `
+    <div class="var-display"><strong>cont:</strong> ${stateIter.cont}</div>
+    <div class="var-display"><strong>Tamanho:</strong> ${stateIter.stack.length}</div>
+  `;
+  document.getElementById('stackContent-iter').textContent = '[' + stateIter.stack.join(', ') + ']';
+}
+
+function resetSimulation() {
+  if (comparisonMode) {
+    stateRec = { marked: {}, expl: {}, stack: [], cont: 0, currentVertex: null, treeEdges: [], treeParent: {}, steps: [], stepIndex: 0, output: '' };
+    stateIter = { marked: {}, expl: {}, stack: [], cont: 0, currentVertex: null, treeEdges: [], treeParent: {}, steps: [], stepIndex: 0, output: '' };
+    
+    prepareSteps('recursive', stateRec);
+    prepareSteps('iterative', stateIter);
+    
+    document.getElementById('output-rec').textContent = '';
+    document.getElementById('output-iter').textContent = '';
+    
+    drawGraphOnCanvas(ctxRec, canvasRec, stateRec);
+    drawTreeOnCanvas(treeCtxRec, treeCanvasRec, stateRec);
+    drawStackOnCanvas(stackCtxRec, stackCanvasRec, stateRec, true);
+    
+    drawGraphOnCanvas(ctxIter, canvasIter, stateIter);
+    drawTreeOnCanvas(treeCtxIter, treeCanvasIter, stateIter);
+    drawStackOnCanvas(stackCtxIter, stackCanvasIter, stateIter, false);
+  } else {
+    marked = {}; expl = {}; stack = []; cont = 0; currentVertex = null;
+    steps = []; stepIndex = 0; simulationStarted = false;
+    treeEdges = []; treeParent = {}; outputText = '';
+    
+    document.getElementById('stateDisplay').style.display = 'none';
+    document.getElementById('output').textContent = '';
+    
+    prepareSteps(dfsVersion, { marked, expl, stack, cont, currentVertex, treeEdges, treeParent, steps, stepIndex });
+    
+    drawGraphOnCanvas(ctx, canvas, { marked, expl, stack, cont, currentVertex });
+    drawTreeOnCanvas(treeCtx, treeCanvas, { treeEdges, expl });
+    drawStackOnCanvas(stackCtx, stackCanvas, { stack }, dfsVersion === 'recursive');
+  }
+}
+
+function prepareSteps(version, state) {
+  state.steps = [];
+  
+  if (version === 'recursive') {
+    state.steps.push({ type: 'init', message: 'cont = 0' });
+    state.steps.push({ type: 'unmark_all', message: 'Desmarcar todos os vértices' });
+    state.steps.push({ type: 'call_dfs', v: 1, message: 'Chamar DFS(1)' });
+    
+    let tempMarked = {}, tempExpl = {}, counter = { value: 0 };
+    simulateDFSRecursive(1, tempMarked, tempExpl, counter, state.steps, 0, null);
+    
+    state.steps.push({ type: 'complete', message: 'DFS completo!' });
+  } else {
+    state.steps.push({ type: 'unmark_all', message: 'Desmarcar todos os vértices' });
+    state.steps.push({ type: 'init_stack', message: 'Criar pilha P' });
+    state.steps.push({ type: 'init', message: 'cont = 0' });
+    state.steps.push({ type: 'mark', v: 1, message: 'Marcar vértice 1' });
+    state.steps.push({ type: 'push', v: 1, message: 'push(P, 1)' });
+    
+    let tempMarked = { 1: true }, tempExpl = {}, tempCont = 0, tempStack = [1];
+    
+    while (tempStack.length > 0) {
+      let curr = tempStack[tempStack.length - 1];
+      state.steps.push({ type: 'top', v: curr, message: `curr = top(P) = ${curr}` });
+      state.steps.push({ type: 'pop', v: curr, message: `pop(P)` });
+      tempStack.pop();
+      
+      tempCont++;
+      state.steps.push({ type: 'expl', v: curr, cont: tempCont, message: `expl[${curr}] = ++cont = ${tempCont}` });
+      state.steps.push({ type: 'explore', v: curr, message: `Explorando vértice ${curr}` });
+      
+      let adjacents = [...adjList[curr]].reverse();
+      
+      for (let u of adjacents) {
+        if (!tempMarked[u]) {
+          tempMarked[u] = true;
+          tempStack.push(u);
+          
+          state.steps.push({ type: 'check_unmarked', from: curr, to: u, message: `Aresta <${curr},${u}>: ${u} está desmarcado` });
+          state.steps.push({ type: 'mark', v: u, message: `Marcar vértice ${u}` });
+          state.steps.push({ type: 'tree_edge', from: curr, to: u, message: `Adicionar aresta ${curr}->${u} à árvore` });
+          state.steps.push({ type: 'push', v: u, message: `push(P, ${u})` });
+        }
+      }
+    }
+    
+    state.steps.push({ type: 'complete', message: 'DFS completo!' });
+  }
+}
+
+function simulateDFSRecursive(v, tempMarked, tempExpl, counter, steps, depth, parent) {
+  steps.push({ type: 'push', v: v, message: `  ${'  '.repeat(depth)}Entrar em DFS(${v})` });
+  steps.push({ type: 'mark', v: v, message: `  ${'  '.repeat(depth)}Marcar vértice ${v}` });
+  tempMarked[v] = true;
+  
+  counter.value++;
+  steps.push({ type: 'expl', v: v, cont: counter.value, message: `  ${'  '.repeat(depth)}expl[${v}] = ++cont = ${counter.value}` });
+  steps.push({ type: 'explore', v: v, message: `  ${'  '.repeat(depth)}Explorando vértice ${v}` });
+  
+  for (let u of adjList[v]) {
+    if (!tempMarked[u]) {
+      steps.push({ type: 'check_unmarked', from: v, to: u, message: `  ${'  '.repeat(depth)}Aresta <${v},${u}>: ${u} está desmarcado` });
+      steps.push({ type: 'tree_edge', from: v, to: u, message: `  ${'  '.repeat(depth)}Adicionar aresta ${v}->${u} à árvore` });
+      steps.push({ type: 'recursive_call', v: u, message: `  ${'  '.repeat(depth)}Chamar DFS(${u})` });
+      
+      simulateDFSRecursive(u, tempMarked, tempExpl, counter, steps, depth + 1, v);
+      
+      steps.push({ type: 'return_from', v: u, message: `  ${'  '.repeat(depth)}Retornar de DFS(${u})` });
+    } else {
+      steps.push({ type: 'check_marked', from: v, to: u, message: `  ${'  '.repeat(depth)}Aresta <${v},${u}>: ${u} já marcado` });
+    }
+  }
+  
+  steps.push({ type: 'pop', v: v, message: `  ${'  '.repeat(depth)}Sair de DFS(${v})` });
 }
 
 window.onload = init;
