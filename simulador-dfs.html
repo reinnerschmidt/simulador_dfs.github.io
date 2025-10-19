@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Simulador DFS - Busca em Profundidade</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+  .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  h2 { color: #333; }
+  .controls { margin: 20px 0; padding: 15px; background: #f9f9f9; border-radius: 5px; }
+  label { font-weight: bold; margin-right: 10px; }
+  input[type=number] { width: 80px; font-size: 16px; padding: 5px; margin-right: 15px; }
+  button { font-size: 16px; padding: 8px 15px; margin: 5px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; }
+  button:hover { background: #45a049; }
+  button:disabled { background: #ccc; cursor: not-allowed; }
+  .step-button { background: #2196F3; }
+  .step-button:hover { background: #0b7dda; }
+  .reset-button { background: #f44336; }
+  .reset-button:hover { background: #da190b; }
+  #graph-canvas { border: 2px solid #ddd; margin: 20px 0; background: white; display: block; }
+  #stack-canvas { border: 2px solid #ddd; margin: 20px 0; background: white; display: block; }
+  #output { margin-top: 20px; white-space: pre-wrap; font-family: monospace; border: 1px solid #ddd; padding: 15px; background: #f9f9f9; max-height: 300px; overflow-y: auto; font-size: 14px; }
+  .state-display { margin: 15px 0; padding: 15px; background: #e3f2fd; border-left: 4px solid #2196F3; border-radius: 4px; }
+  .state-display h3 { margin-top: 0; color: #1976D2; }
+  .var-display { display: inline-block; margin: 5px 15px 5px 0; padding: 5px 10px; background: white; border-radius: 3px; font-family: monospace; }
+  .stack-display { background: #ffe0b2; padding: 10px; border-radius: 4px; margin: 10px 0; }
+  .canvas-label { font-weight: bold; color: #555; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="container">
+<h2>Simulador DFS - Busca em Profundidade (Recursivo)</h2>
+
+<div class="controls">
+  <label for="numVertices">Número de vértices:</label>
+  <input type="number" id="numVertices" value="8" min="3" max="12" />
+  <button onclick="generateRandomGraph()">Gerar Grafo Aleatório</button>
+  <button onclick="loadDefaultGraph()">Carregar Grafo Padrão</button>
+  <button class="step-button" id="stepBtn" onclick="stepSimulation()" disabled>Próximo Passo</button>
+  <button class="reset-button" onclick="resetSimulation()">Reiniciar</button>
+</div>
+
+<div class="canvas-label">Grafo (não orientado):</div>
+<canvas id="graph-canvas" width="900" height="500"></canvas>
+
+<div class="canvas-label">Pilha de Chamadas Recursivas:</div>
+<canvas id="stack-canvas" width="900" height="150"></canvas>
+
+<div class="state-display" id="stateDisplay" style="display:none;">
+  <h3>Estado Atual</h3>
+  <div id="variables"></div>
+  <div class="stack-display">
+    <strong>Pilha de chamadas:</strong> <span id="stackContent">[]</span>
+  </div>
+</div>
+
+<div id="output"></div>
+</div>
+
+<script>
+let vertices = [];
+let edges = [];
+let adjList = {};
+let marked = {};
+let expl = {};
+let callStack = [];
+let cont = 0;
+let currentVertex = null;
+let steps = [];
+let stepIndex = 0;
+let simulationStarted = false;
+let canvas, ctx, stackCanvas, stackCtx;
+let isDefaultGraph = false;
+
+function init() {
+  canvas = document.getElementById('graph-canvas');
+  ctx = canvas.getContext('2d');
+  stackCanvas = document.getElementById('stack-canvas');
+  stackCtx = stackCanvas.getContext('2d');
+  loadDefaultGraph();
+}
+
+function loadDefaultGraph() {
+  isDefaultGraph = true;
+  vertices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  
+  let edgeList = [
+    [1, 9], [1, 4], [1, 5],
+    [9, 5],
+    [5, 4],
+    [4, 6], [4, 2], [4, 7], [4, 8],
+    [6, 8],
+    [8, 2], [8, 3], [8, 10],
+    [2, 3], [2, 7],
+    [7, 3]
+  ];
+  
+  buildGraphFromEdges(edgeList);
+}
+
+function generateRandomGraph() {
+  isDefaultGraph = false;
+  let n = parseInt(document.getElementById('numVertices').value);
+  if (n < 3 || n > 12) {
+    alert('Escolha entre 3 e 12 vértices');
+    return;
+  }
+  
+  vertices = [];
+  for (let i = 1; i <= n; i++) {
+    vertices.push(i);
+  }
+  
+  let edgeList = [];
+  let connected = [1];
+  let unconnected = [];
+  for (let i = 2; i <= n; i++) {
+    unconnected.push(i);
+  }
+  
+  while (unconnected.length > 0) {
+    let fromIdx = Math.floor(Math.random() * connected.length);
+    let toIdx = Math.floor(Math.random() * unconnected.length);
+    let from = connected[fromIdx];
+    let to = unconnected[toIdx];
+    
+    edgeList.push([from, to]);
+    connected.push(to);
+    unconnected.splice(toIdx, 1);
+  }
+  
+  let numExtraEdges = Math.floor(n * 0.5);
+  for (let i = 0; i < numExtraEdges; i++) {
+    let from = Math.floor(Math.random() * n) + 1;
+    let to = Math.floor(Math.random() * n) + 1;
+    
+    if (from !== to && !edgeList.some(e => (e[0] === from && e[1] === to) || (e[0] === to && e[1] === from))) {
+      edgeList.push([from, to]);
+    }
+  }
+  
+  buildGraphFromEdges(edgeList);
+}
+
+function buildGraphFromEdges(edgeList) {
+  edges = [];
+  for (let [u, v] of edgeList) {
+    edges.push([u, v]);
+    edges.push([v, u]);
+  }
+  
+  adjList = {};
+  for (let v of vertices) {
+    adjList[v] = [];
+  }
+  
+  for (let [u, v] of edges) {
+    if (!adjList[u].includes(v)) {
+      adjList[u].push(v);
+    }
+  }
+  
+  for (let v of vertices) {
+    adjList[v].sort((a, b) => a - b);
+  }
+  
+  drawGraph();
+  drawStack();
+  resetSimulation();
+  document.getElementById('stepBtn').disabled = false;
+}
+
+function drawGraph() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  let radius = 20;
+  let positions = {};
+  
+  if (isDefaultGraph && vertices.length === 10) {
+    positions = {
+      1: { x: 180, y: 120 },
+      9: { x: 80, y: 180 },
+      5: { x: 180, y: 240 },
+      4: { x: 320, y: 180 },
+      6: { x: 420, y: 80 },
+      8: { x: 520, y: 120 },
+      10: { x: 650, y: 120 },
+      2: { x: 520, y: 220 },
+      7: { x: 420, y: 280 },
+      3: { x: 650, y: 240 }
+    };
+  } else {
+    let centerX = canvas.width / 2;
+    let centerY = canvas.height / 2;
+    let circleRadius = Math.min(centerX, centerY) - 50;
+    let n = vertices.length;
+    
+    for (let i = 0; i < n; i++) {
+      let angle = (2 * Math.PI * i) / n - Math.PI / 2;
+      positions[vertices[i]] = {
+        x: centerX + circleRadius * Math.cos(angle),
+        y: centerY + circleRadius * Math.sin(angle)
+      };
+    }
+  }
+  
+  ctx.strokeStyle = '#666';
+  ctx.lineWidth = 2;
+  let drawnEdges = new Set();
+  
+  for (let [from, to] of edges) {
+    let edgeKey = from < to ? `${from}-${to}` : `${to}-${from}`;
+    if (drawnEdges.has(edgeKey)) continue;
+    drawnEdges.add(edgeKey);
+    
+    let fromPos = positions[from];
+    let toPos = positions[to];
+    
+    ctx.beginPath();
+    ctx.moveTo(fromPos.x, fromPos.y);
+    ctx.lineTo(toPos.x, toPos.y);
+    ctx.stroke();
+  }
+  
+  for (let v of vertices) {
+    let pos = positions[v];
+    
+    if (marked[v]) {
+      ctx.fillStyle = '#4CAF50';
+    } else if (currentVertex === v) {
+      ctx.fillStyle = '#FFC107';
+    } else if (callStack.includes(v)) {
+      ctx.fillStyle = '#FF9800';
+    } else {
+      ctx.fillStyle = '#fff';
+    }
+    
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, radius, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
+    
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(v, pos.x, pos.y);
+    
+    if (expl[v] !== undefined) {
+      ctx.fillStyle = '#c62828';
+      ctx.font = 'bold 14px Arial';
+      ctx.fillText(expl[v], pos.x + 25, pos.y - 5);
+    }
+  }
+}
+
+function drawStack() {
+  stackCtx.clearRect(0, 0, stackCanvas.width, stackCanvas.height);
+  
+  stackCtx.fillStyle = '#333';
+  stackCtx.font = 'bold 16px Arial';
+  stackCtx.textAlign = 'left';
+  stackCtx.fillText('Pilha de Chamadas (DFS recursivo):', 20, 25);
+  
+  if (callStack.length === 0) {
+    stackCtx.fillStyle = '#999';
+    stackCtx.font = '14px Arial';
+    stackCtx.fillText('[ vazia ]', 350, 25);
+    return;
+  }
+  
+  let boxWidth = 70;
+  let boxHeight = 60;
+  let startX = 100;
+  let startY = 50;
+  let spacing = 5;
+  
+  stackCtx.fillStyle = '#666';
+  stackCtx.font = '12px Arial';
+  stackCtx.textAlign = 'right';
+  stackCtx.fillText('BOTTOM', startX - 10, startY + boxHeight / 2);
+  
+  for (let i = 0; i < callStack.length; i++) {
+    let x = startX + i * (boxWidth + spacing);
+    
+    if (i === callStack.length - 1) {
+      stackCtx.fillStyle = '#FF9800';
+    } else {
+      stackCtx.fillStyle = '#FFB74D';
+    }
+    
+    stackCtx.fillRect(x, startY, boxWidth, boxHeight);
+    
+    stackCtx.strokeStyle = '#F57C00';
+    stackCtx.lineWidth = 2;
+    stackCtx.strokeRect(x, startY, boxWidth, boxHeight);
+    
+    stackCtx.fillStyle = '#000';
+    stackCtx.font = '12px Arial';
+    stackCtx.textAlign = 'center';
+    stackCtx.textBaseline = 'top';
+    stackCtx.fillText('DFS', x + boxWidth / 2, startY + 10);
+    
+    stackCtx.font = 'bold 20px Arial';
+    stackCtx.textBaseline = 'middle';
+    stackCtx.fillText(callStack[i], x + boxWidth / 2, startY + boxHeight / 2 + 5);
+  }
+  
+  let lastX = startX + (callStack.length - 1) * (boxWidth + spacing);
+  stackCtx.fillStyle = '#666';
+  stackCtx.font = '12px Arial';
+  stackCtx.textAlign = 'left';
+  stackCtx.fillText('TOP', lastX + boxWidth + 10, startY + boxHeight / 2);
+}
+
+function resetSimulation() {
+  marked = {};
+  expl = {};
+  callStack = [];
+  cont = 0;
+  currentVertex = null;
+  steps = [];
+  stepIndex = 0;
+  simulationStarted = false;
+  
+  document.getElementById('output').textContent = '';
+  document.getElementById('stateDisplay').style.display = 'none';
+  
+  if (vertices.length > 0) {
+    prepareSimulation();
+    drawGraph();
+    drawStack();
+  }
+}
+
+function prepareSimulation() {
+  steps = [];
+  
+  steps.push({ type: 'init', message: 'cont = 0' });
+  steps.push({ type: 'unmark_all', message: 'Desmarcar todos os vértices' });
+  steps.push({ type: 'call_dfs', v: 1, message: 'Chamar DFS(1)' });
+  
+  let tempMarked = {};
+  let tempExpl = {};
+  let counter = { value: 0 }; // Usar objeto para passar por referência
+  
+  simulateDFS(1, tempMarked, tempExpl, counter, steps, 0);
+  
+  steps.push({ type: 'complete', message: 'DFS completo!' });
+}
+
+function simulateDFS(v, tempMarked, tempExpl, counter, steps, depth) {
+  steps.push({ type: 'push_stack', v: v, message: `  ${'  '.repeat(depth)}Entrar em DFS(${v})` });
+  steps.push({ type: 'mark', v: v, message: `  ${'  '.repeat(depth)}Marcar vértice ${v}` });
+  tempMarked[v] = true;
+  
+  counter.value++;
+  steps.push({ type: 'expl', v: v, cont: counter.value, message: `  ${'  '.repeat(depth)}expl[${v}] = ++cont = ${counter.value}` });
+  tempExpl[v] = counter.value;
+  
+  steps.push({ type: 'explore', v: v, message: `  ${'  '.repeat(depth)}Explorando vértice ${v}` });
+  
+  for (let u of adjList[v]) {
+    if (!tempMarked[u]) {
+      steps.push({ type: 'check_unmarked', from: v, to: u, message: `  ${'  '.repeat(depth)}Aresta <${v},${u}>: ${u} está desmarcado` });
+      steps.push({ type: 'recursive_call', v: u, message: `  ${'  '.repeat(depth)}Chamar DFS(${u})` });
+      
+      simulateDFS(u, tempMarked, tempExpl, counter, steps, depth + 1);
+      
+      steps.push({ type: 'return_from', v: u, message: `  ${'  '.repeat(depth)}Retornar de DFS(${u})` });
+    } else {
+      steps.push({ type: 'check_marked', from: v, to: u, message: `  ${'  '.repeat(depth)}Aresta <${v},${u}>: ${u} já marcado` });
+    }
+  }
+  
+  steps.push({ type: 'pop_stack', v: v, message: `  ${'  '.repeat(depth)}Sair de DFS(${v})` });
+}
+
+function stepSimulation() {
+  if (stepIndex >= steps.length) return;
+  
+  if (!simulationStarted) {
+    simulationStarted = true;
+    document.getElementById('stateDisplay').style.display = 'block';
+  }
+  
+  let step = steps[stepIndex];
+  let output = document.getElementById('output').textContent;
+  
+  switch(step.type) {
+    case 'init':
+    case 'unmark_all':
+    case 'call_dfs':
+      output += step.message + '\n';
+      break;
+      
+    case 'push_stack':
+      callStack.push(step.v);
+      currentVertex = step.v;
+      output += step.message + '\n';
+      break;
+      
+    case 'mark':
+      marked[step.v] = true;
+      output += step.message + '\n';
+      break;
+      
+    case 'expl':
+      expl[step.v] = step.cont;
+      cont = step.cont;
+      output += step.message + '\n';
+      break;
+      
+    case 'explore':
+      output += step.message + '\n';
+      break;
+      
+    case 'check_unmarked':
+    case 'check_marked':
+    case 'recursive_call':
+    case 'return_from':
+      output += step.message + '\n';
+      break;
+      
+    case 'pop_stack':
+      callStack.pop();
+      currentVertex = callStack.length > 0 ? callStack[callStack.length - 1] : null;
+      output += step.message + '\n';
+      break;
+      
+    case 'complete':
+      output += '\n' + step.message + '\n';
+      document.getElementById('stepBtn').disabled = true;
+      currentVertex = null;
+      break;
+  }
+  
+  document.getElementById('output').textContent = output;
+  document.getElementById('output').scrollTop = document.getElementById('output').scrollHeight;
+  
+  updateStateDisplay();
+  drawGraph();
+  drawStack();
+  
+  stepIndex++;
+}
+
+function updateStateDisplay() {
+  let varsHtml = `
+    <div class="var-display"><strong>cont:</strong> ${cont}</div>
+    <div class="var-display"><strong>Profundidade:</strong> ${callStack.length}</div>
+  `;
+  
+  document.getElementById('variables').innerHTML = varsHtml;
+  document.getElementById('stackContent').textContent = '[' + callStack.map(v => `DFS(${v})`).join(', ') + ']';
+}
+
+window.onload = init;
+</script>
+
+</body>
+</html>
