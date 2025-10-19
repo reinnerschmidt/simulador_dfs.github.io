@@ -36,7 +36,8 @@
   <label for="numVertices">Número de vértices:</label>
   <input type="number" id="numVertices" value="8" min="3" max="12" />
   <button onclick="generateRandomGraph()">Gerar Grafo Aleatório</button>
-  <button onclick="loadDefaultGraph()">Carregar Grafo Padrão</button>
+  <button onclick="loadDefaultGraph()">Carregar Padrão 1</button>
+  <button onclick="loadDefaultGraph2()">Carregar Padrão 2</button>
   <button class="step-button" id="stepBtn" onclick="stepSimulation()" disabled>Próximo Passo</button>
   <button class="reset-button" onclick="resetSimulation()">Reiniciar</button>
 </div>
@@ -71,7 +72,7 @@ let steps = [];
 let stepIndex = 0;
 let simulationStarted = false;
 let canvas, ctx, stackCanvas, stackCtx;
-let isDefaultGraph = false;
+let currentGraphType = 'default1';
 
 function init() {
   canvas = document.getElementById('graph-canvas');
@@ -82,7 +83,7 @@ function init() {
 }
 
 function loadDefaultGraph() {
-  isDefaultGraph = true;
+  currentGraphType = 'default1';
   vertices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   
   let edgeList = [
@@ -99,8 +100,32 @@ function loadDefaultGraph() {
   buildGraphFromEdges(edgeList);
 }
 
+function loadDefaultGraph2() {
+  currentGraphType = 'default2';
+  // Grafo padrão 2: A-B-C-D-E-F-G-H (8 vértices)
+  // Usando números 1-8 para A-H
+  vertices = [1, 2, 3, 4, 5, 6, 7, 8];
+  
+  // Arestas baseadas na imagem:
+  // A(1) -> B(2), C(3)
+  // B(2) -> D(4), E(5)
+  // C(3) -> F(6), G(7)
+  // D(4), E(5), F(6), G(7) -> H(8)
+  let edgeList = [
+    [1, 2], [1, 3],
+    [2, 4], [2, 5],
+    [3, 6], [3, 7],
+    [4, 8],
+    [5, 8],
+    [6, 8],
+    [7, 8]
+  ];
+  
+  buildGraphFromEdges(edgeList);
+}
+
 function generateRandomGraph() {
-  isDefaultGraph = false;
+  currentGraphType = 'random';
   let n = parseInt(document.getElementById('numVertices').value);
   if (n < 3 || n > 12) {
     alert('Escolha entre 3 e 12 vértices');
@@ -177,7 +202,7 @@ function drawGraph() {
   let radius = 20;
   let positions = {};
   
-  if (isDefaultGraph && vertices.length === 10) {
+  if (currentGraphType === 'default1' && vertices.length === 10) {
     positions = {
       1: { x: 180, y: 120 },
       9: { x: 80, y: 180 },
@@ -189,6 +214,18 @@ function drawGraph() {
       2: { x: 520, y: 220 },
       7: { x: 420, y: 280 },
       3: { x: 650, y: 240 }
+    };
+  } else if (currentGraphType === 'default2' && vertices.length === 8) {
+    // Layout hierárquico para o padrão 2
+    positions = {
+      1: { x: 450, y: 80 },   // A (topo)
+      2: { x: 300, y: 180 },  // B
+      3: { x: 600, y: 180 },  // C
+      4: { x: 220, y: 280 },  // D
+      5: { x: 380, y: 280 },  // E
+      6: { x: 520, y: 280 },  // F
+      7: { x: 680, y: 280 },  // G
+      8: { x: 450, y: 400 }   // H (base)
     };
   } else {
     let centerX = canvas.width / 2;
@@ -345,7 +382,7 @@ function prepareSimulation() {
   
   let tempMarked = {};
   let tempExpl = {};
-  let counter = { value: 0 }; // Usar objeto para passar por referência
+  let counter = { value: 0 };
   
   simulateDFS(1, tempMarked, tempExpl, counter, steps, 0);
   
